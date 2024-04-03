@@ -78,6 +78,10 @@ ABlasterCharacter::ABlasterCharacter()
 
 	// Create a Timeline Component for dissolving effects
 	DissolveTimeline = CreateDefaultSubobject<UTimelineComponent>(TEXT("DissolveTimelineComponent"));
+
+	AttachedGrenade = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("AttachedGrenade"));
+	AttachedGrenade->SetupAttachment(GetMesh(), "GrenadeSocket");
+	AttachedGrenade->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 }
 
 void ABlasterCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty> &OutLifetimeProps) const
@@ -195,6 +199,10 @@ void ABlasterCharacter::BeginPlay()
 	if (HasAuthority())
 	{
 		OnTakeAnyDamage.AddDynamic(this, &ABlasterCharacter::RecieveDamage);
+	}
+	if (AttachedGrenade)
+	{
+		AttachedGrenade->SetVisibility(false);
 	}
 }
 

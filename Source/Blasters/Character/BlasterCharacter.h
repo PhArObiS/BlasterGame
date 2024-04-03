@@ -184,8 +184,16 @@ private:
 	UPROPERTY()
 	class ABlasterPlayerState *BlasterPlayerState;
 
+	/**
+	 * Grenade
+	 */
+
+	UPROPERTY(VisibleAnywhere)
+	UStaticMeshComponent *AttachedGrenade;
+
 public:
-	void SetOverlappingWeapon(AWeapon *Weapon);
+	void
+	SetOverlappingWeapon(AWeapon *Weapon);
 	bool IsWeaponEquipped();
 	bool IsAiming();
 
@@ -232,5 +240,9 @@ public:
 	FORCEINLINE UAnimMontage *GetReloadMontage() const
 	{
 		return ReloadMontage;
+	}
+	FORCEINLINE UStaticMeshComponent *GetAttachedGrenade() const
+	{
+		return AttachedGrenade;
 	}
 };
