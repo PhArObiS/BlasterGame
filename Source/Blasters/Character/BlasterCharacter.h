@@ -37,6 +37,9 @@ public:
 	UFUNCTION(BlueprintImplementableEvent, Category = "Crosshairs")
 	void ShowSniperScopeWidget(bool bShowScope);
 
+	void UpdateHUDHealth();
+	void UpdateHUDShield();
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void
@@ -62,7 +65,7 @@ protected:
 
 	UFUNCTION()
 	void RecieveDamage(AActor *DamagedActor, float Damage, const UDamageType *DamageType, class AController *InstigatorController, AActor *DamageCauser);
-	void UpdateHUDHealth();
+
 	// Poll for any relevant classes and intialize our HUD
 	void PollInit();
 	void RotateInPlace(float DeltaTime);
@@ -85,6 +88,9 @@ private:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	class UCombatComponent *CombatComponent;
+
+	UPROPERTY(VisibleAnywhere)
+	class UBuffComponent *BuffComponent;
 
 	UFUNCTION(Server, Reliable)
 	void ServerEquipWeaponButtonPressed();
@@ -129,7 +135,10 @@ private:
 	float TimeSinceLastMovementReplication;
 	float CalculatedSpeed();
 
-	// Player Health
+	/**
+	 * Player Health
+	 */
+
 	UPROPERTY(EditAnywhere, Category = "Player Stats")
 	float MaxHealth = 100.f;
 
@@ -137,7 +146,20 @@ private:
 	float Health = 100.f;
 
 	UFUNCTION()
-	void OnRep_Health();
+	void OnRep_Health(float LastHealth);
+
+	/**
+	 * Player Shield
+	 */
+
+	UPROPERTY(EditAnywhere, Category = "Player Stats")
+	float MaxShield = 100.f;
+
+	UPROPERTY(ReplicatedUsing = OnRep_Health, VisibleAnywhere, Category = "Player Stats")
+	float Shield = 100.f;
+
+	UFUNCTION()
+	void OnRep_Shield(float LastShield);
 
 	UPROPERTY()
 	class ABlasterPlayerController *BlasterPlayerController;
@@ -227,6 +249,10 @@ public:
 	{
 		return Health;
 	}
+	FORCEINLINE void SetHealth(float Amount)
+	{
+		Health = Amount;
+	}
 	FORCEINLINE float GetMaxHealth() const
 	{
 		return MaxHealth;
@@ -244,5 +270,9 @@ public:
 	FORCEINLINE UStaticMeshComponent *GetAttachedGrenade() const
 	{
 		return AttachedGrenade;
+	}
+	FORCEINLINE UBuffComponent *GetBuffComponent() const
+	{
+		return BuffComponent;
 	}
 };

@@ -39,6 +39,20 @@ void UCombatComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty> &Out
 	DOREPLIFETIME(UCombatComponent, Grenades);
 }
 
+void UCombatComponent::PickupAmmo(EWeaponType WeaponType, int32 AmmoAmount)
+{
+	if (CarriedAmmoMap.Contains(WeaponType))
+	{
+		CarriedAmmoMap[WeaponType] = FMath::Clamp(CarriedAmmoMap[WeaponType] + AmmoAmount, 0, MaxCarriedAmmo);
+
+		UpdateCarriedAmmo();
+	}
+	if (EquippedWeapon && EquippedWeapon->IsEmpty() && EquippedWeapon->GetWeaponType() == WeaponType)
+	{
+		Reload();
+	}
+}
+
 // Called when the component is initialized
 void UCombatComponent::BeginPlay()
 {
