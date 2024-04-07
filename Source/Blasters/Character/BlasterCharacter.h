@@ -39,11 +39,13 @@ public:
 
 	void UpdateHUDHealth();
 	void UpdateHUDShield();
+	void UpdateHUDAmmo();
+
+	void SpawnDefaultWeapon();
 
 protected:
 	// Called when the game starts or when spawned
-	virtual void
-	BeginPlay() override;
+	virtual void BeginPlay() override;
 
 	void MoveForward(float Value);
 	void MoveRight(float Value);
@@ -62,6 +64,8 @@ protected:
 	void FireButtonReleased();
 	void PlayHitReactMontage();
 	void GrenadeButtonPressed();
+	void DropOrDestroyedWeapon(AWeapon *Weapon);
+	void DropOrDestroyWeapons();
 
 	UFUNCTION()
 	void RecieveDamage(AActor *DamagedActor, float Damage, const UDamageType *DamageType, class AController *InstigatorController, AActor *DamageCauser);
@@ -155,8 +159,8 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Player Stats")
 	float MaxShield = 100.f;
 
-	UPROPERTY(ReplicatedUsing = OnRep_Health, VisibleAnywhere, Category = "Player Stats")
-	float Shield = 100.f;
+	UPROPERTY(ReplicatedUsing = OnRep_Shield, EditAnywhere, Category = "Player Stats")
+	float Shield = 0.f;
 
 	UFUNCTION()
 	void OnRep_Shield(float LastShield);
@@ -213,9 +217,15 @@ private:
 	UPROPERTY(VisibleAnywhere)
 	UStaticMeshComponent *AttachedGrenade;
 
+	/**
+	 * Default Weapon
+	 */
+
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<AWeapon> DefaultWeaponClass;
+
 public:
-	void
-	SetOverlappingWeapon(AWeapon *Weapon);
+	void SetOverlappingWeapon(AWeapon *Weapon);
 	bool IsWeaponEquipped();
 	bool IsAiming();
 
@@ -256,6 +266,18 @@ public:
 	FORCEINLINE float GetMaxHealth() const
 	{
 		return MaxHealth;
+	}
+	FORCEINLINE float GetShield() const
+	{
+		return Shield;
+	}
+	FORCEINLINE void SetShield(float Amount)
+	{
+		Shield = Amount;
+	}
+	FORCEINLINE float GetMaxShield() const
+	{
+		return MaxShield;
 	}
 	ECombatState GetCombatState() const;
 	FORCEINLINE UCombatComponent *GetCombatComponent() const { return CombatComponent; }

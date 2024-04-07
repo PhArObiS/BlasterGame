@@ -106,10 +106,8 @@ void ABlasterCharacter::OnRep_ReplicatedMovement()
 
 void ABlasterCharacter::Elim()
 {
-	if (CombatComponent && CombatComponent->EquippedWeapon)
-	{
-		CombatComponent->EquippedWeapon->DroppedWeapon();
-	}
+	DropOrDestroyWeapons();
+
 	MulticastElim();
 	GetWorldTimerManager().SetTimer(
 		ElimTimer,
@@ -178,6 +176,36 @@ void ABlasterCharacter::ElimTimerFinished()
 	}
 }
 
+void ABlasterCharacter::DropOrDestroyedWeapon(AWeapon *Weapon)
+{
+	if (Weapon == nullptr)
+		return;
+
+	if (Weapon->bDestroyWeapon)
+	{
+		Weapon->Destroy();
+	}
+	else
+	{
+		Weapon->DroppedWeapon();
+	}
+}
+
+void ABlasterCharacter::DropOrDestroyWeapons()
+{
+	if (CombatComponent)
+	{
+		if (CombatComponent->EquippedWeapon)
+		{
+			DropOrDestroyedWeapon(CombatComponent->EquippedWeapon);
+		}
+		if (CombatComponent->SecondaryWeapon)
+		{
+			DropOrDestroyedWeapon(CombatComponent->SecondaryWeapon);
+		}
+	}
+}
+
 void ABlasterCharacter::Destroyed()
 {
 	Super::Destroyed();
@@ -199,8 +227,11 @@ void ABlasterCharacter::Destroyed()
 void ABlasterCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-
+	SpawnDefaultWeapon();
+	UpdateHUDAmmo();
 	UpdateHUDHealth();
+	UpdateHUDShield();
+
 	if (HasAuthority())
 	{
 		OnTakeAnyDamage.AddDynamic(this, &ABlasterCharacter::RecieveDamage);
@@ -387,8 +418,25 @@ void ABlasterCharacter::RecieveDamage(AActor *DamagedActor, float Damage, const 
 {
 	if (bElimmed)
 		return;
-	Health = FMath::Clamp(Health - Damage, 0.f, MaxHealth);
+
+	float DamageToHealth = Damage;
+	if (Shield > 0.f)
+	{
+		if (Shield >= Damage)
+		{
+			Shield = FMath::Clamp(Shield - Damage, 0.f, MaxShield);
+			DamageToHealth = 0.f;
+		}
+		else
+		{
+			Shield = 0.f;
+			DamageToHealth = FMath::Clamp(DamageToHealth - Shield, 0.f, Damage);
+		}
+	}
+
+	Health = FMath::Clamp(Health - DamageToHealth, 0.f, MaxHealth);
 	UpdateHUDHealth();
+	UpdateHUDShield();
 	PlayHitReactMontage();
 
 	if (Health == 0.f)
@@ -445,16 +493,7 @@ void ABlasterCharacter::EquipButtonPressed()
 		return;
 	if (CombatComponent)
 	{
-		if (HasAuthority())
-		{
-			// If server, directly equip the weapon
-			CombatComponent->EquipWeapon(OverlappingWeapon);
-		}
-		else
-		{
-			// If client, notify server to equip the weapon
-			ServerEquipWeaponButtonPressed();
-		}
+		ServerEquipWeaponButtonPressed();
 	}
 }
 
@@ -463,7 +502,14 @@ void ABlasterCharacter::ServerEquipWeaponButtonPressed_Implementation()
 	// Server-side function to equip the weapon
 	if (CombatComponent)
 	{
-		CombatComponent->EquipWeapon(OverlappingWeapon);
+		if (OverlappingWeapon)
+		{
+			CombatComponent->EquipWeapon(OverlappingWeapon);
+		}
+		else if (CombatComponent->ShouldSwapWeapons())
+		{
+			CombatComponent->SwapWeapons();
+		}
 	}
 }
 void ABlasterCharacter::CrouchButtonPressed()
@@ -717,6 +763,31 @@ void ABlasterCharacter::UpdateHUDShield()
 	if (BlasterPlayerController)
 	{
 		BlasterPlayerController->SetHUDShield(Shield, MaxShield);
+	}
+}
+
+void ABlasterCharacter::UpdateHUDAmmo()
+{
+	BlasterPlayerController = BlasterPlayerController == nullptr ? Cast<ABlasterPlayerController>(Controller) : BlasterPlayerController;
+	if (BlasterPlayerController && CombatComponent && CombatComponent->EquippedWeapon)
+	{
+		BlasterPlayerController->SetHUDCarriedAmmo(CombatComponent->CarriedAmmo);
+		BlasterPlayerController->SetHUDWeaponAmmo(CombatComponent->EquippedWeapon->GetAmmo());
+	}
+}
+
+void ABlasterCharacter::SpawnDefaultWeapon()
+{
+	ABlasterGameMode *BlasterGameMode = Cast<ABlasterGameMode>(UGameplayStatics::GetGameMode(this));
+	UWorld *World = GetWorld();
+	if (BlasterGameMode && World && !bElimmed && DefaultWeaponClass)
+	{
+		AWeapon *StartingWeapon = World->SpawnActor<AWeapon>(DefaultWeaponClass);
+		StartingWeapon->bDestroyWeapon = true;
+		if (CombatComponent)
+		{
+			CombatComponent->EquipWeapon(StartingWeapon);
+		}
 	}
 }
 
