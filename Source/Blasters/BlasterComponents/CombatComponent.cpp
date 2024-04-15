@@ -218,12 +218,8 @@ void UCombatComponent::StartFireTimer()
 void UCombatComponent::FireTimerFinished()
 {
 	ClearTimers();
-
 	if (EquippedWeapon == nullptr)
-	{
 		return;
-	}
-
 	// Reset bCanFire to true
 	bCanFire = true;
 
@@ -367,15 +363,6 @@ void UCombatComponent::OnRep_Aiming()
 	}
 }
 
-void UCombatComponent::ReloadEmptyWeapon()
-{
-	// If the equipped weapon is empty, initiate a reload
-	if (EquippedWeapon && EquippedWeapon->IsEmpty())
-	{
-		Reload();
-	}
-}
-
 void UCombatComponent::DropEquippedWeapon()
 {
 	if (EquippedWeapon)
@@ -451,11 +438,22 @@ void UCombatComponent::PlayEquippedWeaponSound(AWeapon *WeaponToEquip)
 	}
 }
 
+void UCombatComponent::ReloadEmptyWeapon()
+{
+	// If the equipped weapon is empty, initiate a reload
+	if (EquippedWeapon && EquippedWeapon->IsEmpty())
+	{
+		Reload();
+	}
+}
+
 void UCombatComponent::Reload()
 {
-	if (CarriedAmmo > 0 && CombatState == ECombatState::ECS_Unoccupied && EquippedWeapon && !EquippedWeapon->IsFull())
+	if (CarriedAmmo > 0 && CombatState == ECombatState::ECS_Unoccupied && EquippedWeapon && !EquippedWeapon->IsFull() && !bLocallyReloading)
 	{
 		ServerReload();
+		HandleReload();
+		bLocallyReloading = true;
 	}
 }
 
@@ -467,14 +465,15 @@ void UCombatComponent::ServerReload_Implementation()
 	// Change combat state to reloading
 	CombatState = ECombatState::ECS_Reloading;
 	// Start the reload process
-	HandleReload();
+	if (!Character->IsLocallyControlled())
+		HandleReload();
 }
 
 void UCombatComponent::FinishReloading()
 {
 	if (Character == nullptr)
 		return;
-
+	bLocallyReloading = false;
 	if (Character->HasAuthority())
 	{
 		// Reset combat state to unoccupied after reloading is finished
@@ -504,7 +503,7 @@ void UCombatComponent::UpdateAmmoValues()
 	{
 		Controller->SetHUDCarriedAmmo(CarriedAmmo);
 	}
-	EquippedWeapon->AddAmmo(-ReloadAmount);
+	EquippedWeapon->AddAmmo(ReloadAmount);
 }
 
 void UCombatComponent::UpdateShotgunAmmoValues()
@@ -522,7 +521,7 @@ void UCombatComponent::UpdateShotgunAmmoValues()
 	{
 		Controller->SetHUDCarriedAmmo(CarriedAmmo);
 	}
-	EquippedWeapon->AddAmmo(-1);
+	EquippedWeapon->AddAmmo(1);
 	bCanFire = true;
 	if (EquippedWeapon->IsFull() || CarriedAmmo == 0)
 	{
@@ -585,7 +584,8 @@ void UCombatComponent::OnRep_CombatState()
 	switch (CombatState)
 	{
 	case ECombatState::ECS_Reloading:
-		HandleReload();
+		if (Character && !Character->IsLocallyControlled())
+			HandleReload();
 		break;
 	case ECombatState::ECS_Unoccupied:
 		if (bFireButtonPressed)
@@ -873,6 +873,8 @@ void UCombatComponent::ServerSetAiming_Implementation(bool bIsAiming)
 bool UCombatComponent::CanFire()
 {
 	if (EquippedWeapon == nullptr)
+		return false;
+	if (bLocallyReloading)
 		return false;
 	if (!EquippedWeapon->IsEmpty() && bCanFire && CombatState == ECombatState::ECS_Reloading && EquippedWeapon->GetWeaponType() == EWeaponType::EWT_Shotgun)
 		return true;

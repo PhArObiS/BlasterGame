@@ -2,12 +2,12 @@
 #include "HitScanWeapon.h"
 #include "Engine/SkeletalMeshSocket.h"
 #include "Blasters/Character/BlasterCharacter.h"
+#include "Blasters/PlayerController/BlasterPlayerController.h"
 #include "Kismet/GameplayStatics.h"
 #include "Particles/ParticleSystemComponent.h"
 #include "Sound/SoundCue.h"
-
 #include "WeaponTypes.h"
-
+#include "Blasters/BlasterComponents/LagCompensationComponent.h"
 #include "DrawDebugHelpers.h"
 
 // Fire function implementation
@@ -39,14 +39,31 @@ void AHitScanWeapon::Fire(const FVector &HitTarget)
 
         // Apply damage if hit a valid character
         ABlasterCharacter *BlasterCharacter = Cast<ABlasterCharacter>(FireHit.GetActor());
-        if (BlasterCharacter && HasAuthority() && InstigatorController)
+        if (BlasterCharacter && InstigatorController)
         {
-            UGameplayStatics::ApplyDamage(
-                BlasterCharacter,
-                Damage,
-                InstigatorController,
-                this,
-                UDamageType::StaticClass());
+            if (HasAuthority() && !bUseServerSideRewind)
+            {
+                UGameplayStatics::ApplyDamage(
+                    BlasterCharacter,
+                    Damage,
+                    InstigatorController,
+                    this,
+                    UDamageType::StaticClass());
+            }
+            if (!HasAuthority() && bUseServerSideRewind)
+            {
+                BlasterOwnerCharacter = BlasterOwnerCharacter == nullptr ? Cast<ABlasterCharacter>(OwnerPawn) : BlasterOwnerCharacter;
+                BlasterOwnerController = BlasterOwnerController == nullptr ? Cast<ABlasterPlayerController>(InstigatorController) : BlasterOwnerController;
+                if (BlasterOwnerController && BlasterOwnerCharacter && BlasterOwnerCharacter->GetLagCompensation() && BlasterOwnerCharacter->IsLocallyControlled())
+                {
+                    BlasterOwnerCharacter->GetLagCompensation()->ServerScoreRequest(
+                        BlasterCharacter,
+                        Start,
+                        HitTarget,
+                        BlasterOwnerController->GetServerTime() - BlasterOwnerController->SingleTripTime,
+                        this);
+                }
+            }
         }
         // Spawn impact particles at the hit point
         if (ImpactParticles)
@@ -57,7 +74,7 @@ void AHitScanWeapon::Fire(const FVector &HitTarget)
                 FireHit.ImpactPoint,
                 FireHit.ImpactNormal.Rotation());
         }
-        // Play hit sound at the hit point ----------------------------------------
+        // Play hit sound at the hit point
         if (HitSound)
         {
             UGameplayStatics::PlaySoundAtLocation(

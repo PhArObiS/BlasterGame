@@ -98,7 +98,10 @@ void UBlasterAnimInstance::NativeUpdateAnimation(float DeltaTime)
 
     // Determine whether to use FABRIK based on combat state.
     bUseFABRIK = BlasterCharacter->GetCombatState() == ECombatState::ECS_Unoccupied;
-
+    if (BlasterCharacter->IsLocallyControlled() && BlasterCharacter->GetCombatState() != ECombatState::ECS_ThrowingGrenade)
+    {
+        bUseFABRIK = !BlasterCharacter->IsLocallyReloading();
+    }
     // Determine whether to use aim offsets based on combat state and gameplay disable state.
     bUseAimOffsets = BlasterCharacter->GetCombatState() == ECombatState::ECS_Unoccupied && !BlasterCharacter->GetDisableGameplay();
 

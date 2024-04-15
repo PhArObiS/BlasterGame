@@ -33,6 +33,8 @@ public:
 	void HandleMatchHasStarted();
 	void HandleCooldown();
 
+	float SingleTripTime = 0.f; // The time it takes for a message to travel from the client to the server and back
+
 protected:
 	virtual void BeginPlay() override;
 	void SetHUDTime();

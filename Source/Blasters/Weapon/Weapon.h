@@ -123,6 +123,18 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Weapon Scatter")
 	float SphereRadius = 75.f;
 
+	UPROPERTY(EditANywhere)
+	float Damage = 20.f;
+
+	UPROPERTY(EditAnywhere)
+	bool bUseServerSideRewind = false;
+
+	UPROPERTY()
+	class ABlasterCharacter *BlasterOwnerCharacter;
+
+	UPROPERTY()
+	class ABlasterPlayerController *BlasterOwnerController;
+
 private:
 	UPROPERTY(VisibleAnywhere, Category = "Weapon Properties")
 	USkeletalMeshComponent *WeaponMesh;
@@ -145,22 +157,23 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Weapon")
 	TSubclassOf<class ACasing> CasingClass;
 
-	UPROPERTY(EditAnywhere, ReplicatedUsing = OnRep_Ammo, Category = "Weapon")
+	UPROPERTY(EditAnywhere, Category = "Weapon")
 	int32 Ammo;
 
-	UFUNCTION()
-	void OnRep_Ammo();
+	UFUNCTION(Client, Reliable)
+	void ClientUpdateAmmo(int32 ServerAmmo);
+
+	UFUNCTION(Client, Reliable)
+	void ClientAddAmmo(int32 AmmoToAdd);
 
 	void SpendRound();
 
 	UPROPERTY(EditAnywhere, Category = "Weapon")
 	int32 MagCapacity;
 
-	UPROPERTY()
-	class ABlasterCharacter *BlasterOwnerCharacter;
-
-	UPROPERTY()
-	class ABlasterPlayerController *BlasterOwnerController;
+	// The number of unprocessed server requests for ammo
+	// This is used to prevent the client from sending too many requests to the server
+	int32 Sequence = 0;
 
 	UPROPERTY(EditAnywhere)
 	EWeaponType WeaponType;
@@ -177,4 +190,5 @@ public:
 	FORCEINLINE EWeaponState GetWeaponState() const { return WeaponState; }
 	FORCEINLINE int32 GetAmmo() const { return Ammo; }
 	FORCEINLINE int32 GetMagCapacity() const { return MagCapacity; }
+	FORCEINLINE float GetDamage() const { return Damage; }
 };
