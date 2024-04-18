@@ -41,8 +41,11 @@ void AHitScanWeapon::Fire(const FVector &HitTarget)
         ABlasterCharacter *BlasterCharacter = Cast<ABlasterCharacter>(FireHit.GetActor());
         if (BlasterCharacter && InstigatorController)
         {
-            if (HasAuthority() && !bUseServerSideRewind)
+            bool bCauseAuthDamage = !bUseServerSideRewind || OwnerPawn->IsLocallyControlled();
+            if (HasAuthority() && bCauseAuthDamage)
             {
+                const float DamageToCause = FireHit.BoneName.ToString() == FString("head") ? HeadShotDamage : Damage;
+
                 UGameplayStatics::ApplyDamage(
                     BlasterCharacter,
                     Damage,
@@ -60,8 +63,7 @@ void AHitScanWeapon::Fire(const FVector &HitTarget)
                         BlasterCharacter,
                         Start,
                         HitTarget,
-                        BlasterOwnerController->GetServerTime() - BlasterOwnerController->SingleTripTime,
-                        this);
+                        BlasterOwnerController->GetServerTime() - BlasterOwnerController->SingleTripTime);
                 }
             }
         }

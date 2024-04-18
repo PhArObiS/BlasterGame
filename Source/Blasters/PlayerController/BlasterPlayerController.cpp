@@ -15,6 +15,7 @@
 #include "Blasters/GameState/BlasterGameState.h"
 #include "Blasters/PlayerState/BlasterPlayerState.h"
 #include "Components/Image.h"
+#include "Blasters/HUD/ReturnToMainMenu.h"
 
 void ABlasterPlayerController::BeginPlay()
 {
@@ -49,10 +50,16 @@ void ABlasterPlayerController::CheckPing(float DeltaTime)
         PlayerState = PlayerState == nullptr ? GetPlayerState<ABlasterPlayerState>() : PlayerState;
         if (PlayerState)
         {
+            UE_LOG(LogTemp, Warning, TEXT("Ping: %d"), PlayerState->GetPingInMilliseconds());
             if (PlayerState->GetPingInMilliseconds() * 4 > HighPingThreshold) // 4 times the ping is the threshold for high ping
             {
                 HighPingWarning();
                 PingAnimationRunningTime = 0.f;
+                ServerReportPingStatus(true);
+            }
+            else
+            {
+                ServerReportPingStatus(false);
             }
         }
         HighPingRunningTime = 0.f;
@@ -61,6 +68,43 @@ void ABlasterPlayerController::CheckPing(float DeltaTime)
         BlasterHUD && BlasterHUD->CharacterOverlay &&
         BlasterHUD->CharacterOverlay->HighPingAnimation &&
         BlasterHUD->CharacterOverlay->IsAnimationPlaying(BlasterHUD->CharacterOverlay->HighPingAnimation);
+
+    if (bHighPingAnimationPlaying)
+    {
+        PingAnimationRunningTime += DeltaTime;
+        if (PingAnimationRunningTime > HighPingDuration)
+        {
+            StopHighPingWarning();
+        }
+    }
+}
+
+void ABlasterPlayerController::ShowReturnToMainMenu()
+{
+    if (ReturnToMainMenuWidget == nullptr)
+        return;
+    if (ReturnToMainMenu == nullptr)
+    {
+        ReturnToMainMenu = CreateWidget<UReturnToMainMenu>(this, ReturnToMainMenuWidget);
+    }
+    if (ReturnToMainMenu)
+    {
+        bReturnToMainMenuOpen = !bReturnToMainMenuOpen;
+        if (bReturnToMainMenuOpen)
+        {
+            ReturnToMainMenu->MenuSetup();
+        }
+        else
+        {
+            ReturnToMainMenu->MenuTearDown();
+        }
+    }
+}
+
+// Is ping high? If so, broadcast to the server
+void ABlasterPlayerController::ServerReportPingStatus_Implementation(bool bHighPing)
+{
+    HighPingDelegate.Broadcast(bHighPing);
 }
 
 void ABlasterPlayerController::CheckTimeSync(float DeltaTime)
@@ -394,6 +438,15 @@ void ABlasterPlayerController::PollInit()
             }
         }
     }
+}
+
+void ABlasterPlayerController::SetupInputComponent()
+{
+    Super::SetupInputComponent();
+    if (InputComponent == nullptr)
+        return;
+
+    InputComponent->BindAction("Quit", IE_Pressed, this, &ABlasterPlayerController::ShowReturnToMainMenu);
 }
 
 void ABlasterPlayerController::ServerRequestServerTime_Implementation(float TimeOfClientRequest) // -------------------------------------

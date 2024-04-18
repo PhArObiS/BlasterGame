@@ -89,18 +89,18 @@ void AShotgun::FireShotgun(const TArray<FVector_NetQuantize> &HitTargets)
         }
 
         // Calculate head shot damage by multiplying times hit x HeadShotDamage - store in DamageMap
-        // for (auto HeadShotHitPair : HeadShotHitMap)
-        // {
-        //     if (HeadShotHitPair.Key)
-        //     {
-        //         if (DamageMap.Contains(HeadShotHitPair.Key))
-        //             DamageMap[HeadShotHitPair.Key] += HeadShotHitPair.Value * HeadShotDamage;
-        //         else
-        //             DamageMap.Emplace(HeadShotHitPair.Key, HeadShotHitPair.Value * HeadShotDamage);
+        for (auto HeadShotHitPair : HeadShotHitMap)
+        {
+            if (HeadShotHitPair.Key)
+            {
+                if (DamageMap.Contains(HeadShotHitPair.Key))
+                    DamageMap[HeadShotHitPair.Key] += HeadShotHitPair.Value * HeadShotDamage;
+                else
+                    DamageMap.Emplace(HeadShotHitPair.Key, HeadShotHitPair.Value * HeadShotDamage);
 
-        //         HitCharacters.AddUnique(HeadShotHitPair.Key);
-        //     }
-        // }
+                HitCharacters.AddUnique(HeadShotHitPair.Key);
+            }
+        }
 
         // Loop through DamageMap to get total damage for each character
         for (auto DamagePair : DamageMap)

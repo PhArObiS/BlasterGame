@@ -21,10 +21,17 @@ public:
 	virtual void SetupPlayerInputComponent(class UInputComponent *PlayerInputComponent) override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty> &OutLifetimeProps) const override;
 	virtual void PostInitializeComponents() override;
+
+	/**
+	 * Play combat montages
+
+	*/
 	void PlayFireMontage(bool bIsAiming);
 	void PlayReloadMontage();
 	void PlayElimMontage();
 	void PlayThrowGrenadeMontage();
+	void PlaySwapMontage();
+
 	virtual void OnRep_ReplicatedMovement() override;
 	void Elim();
 	UFUNCTION(NetMulticast, Reliable)
@@ -45,6 +52,8 @@ public:
 
 	UPROPERTY()
 	TMap<FName, class UBoxComponent *> HitCollisionBoxes;
+
+	bool bFinishedSwapping = false;
 
 protected:
 	// Called when the game starts or when spawned
@@ -71,7 +80,7 @@ protected:
 	void DropOrDestroyWeapons();
 
 	UFUNCTION()
-	void RecieveDamage(AActor *DamagedActor, float Damage, const UDamageType *DamageType, class AController *InstigatorController, AActor *DamageCauser);
+	void ReceiveDamage(AActor *DamagedActor, float Damage, const UDamageType *DamageType, class AController *InstigatorController, AActor *DamageCauser);
 
 	// Poll for any relevant classes and intialize our HUD
 	void PollInit();
@@ -193,6 +202,9 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = "Combat")
 	class UAnimMontage *ThrowGrenadeMontage;
+
+	UPROPERTY(EditAnywhere, Category = "Combat")
+	class UAnimMontage *SwapWeaponMontage;
 
 	void HideCameraIfCharacterClose();
 

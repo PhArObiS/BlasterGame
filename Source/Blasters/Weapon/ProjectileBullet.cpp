@@ -2,7 +2,9 @@
 
 #include "ProjectileBullet.h"
 #include "Kismet/GameplayStatics.h"
-#include "GameFramework/Character.h"
+#include "Blasters/Character/BlasterCharacter.h"
+#include "Blasters/PlayerController/BlasterPlayerController.h"
+#include "Blasters/BlasterComponents/LagCompensationComponent.h"
 #include "GameFramework/ProjectileMovementComponent.h"
 
 AProjectileBullet::AProjectileBullet()
@@ -32,13 +34,30 @@ void AProjectileBullet::PostEditChangeProperty(FPropertyChangedEvent &Event)
 
 void AProjectileBullet::OnHit(UPrimitiveComponent *HitComp, AActor *OtherActor, UPrimitiveComponent *OtherComp, FVector NormalImpulse, const FHitResult &Hit)
 {
-    ACharacter *OwnerCharacter = Cast<ACharacter>(GetOwner());
+    ABlasterCharacter *OwnerCharacter = Cast<ABlasterCharacter>(GetOwner());
     if (OwnerCharacter)
     {
-        AController *OwnerController = OwnerCharacter->Controller;
+        ABlasterPlayerController *OwnerController = Cast<ABlasterPlayerController>(OwnerCharacter->Controller);
         if (OwnerController)
         {
-            UGameplayStatics::ApplyDamage(OtherActor, Damage, OwnerController, this, UDamageType::StaticClass());
+            if (OwnerCharacter->HasAuthority() && !bUseServerSideRewind)
+            {
+
+                const float DamageToCause = Hit.BoneName.ToString() == FString("head") ? HeadShotDamage : Damage;
+
+                UGameplayStatics::ApplyDamage(OtherActor, DamageToCause, OwnerController, this, UDamageType::StaticClass());
+                Super::OnHit(HitComp, OtherActor, OtherComp, NormalImpulse, Hit);
+                return;
+            }
+            ABlasterCharacter *HitCharacter = Cast<ABlasterCharacter>(OtherActor);
+            if (bUseServerSideRewind && OwnerCharacter->GetLagCompensation() && OwnerCharacter->IsLocallyControlled() && HitCharacter)
+            {
+                OwnerCharacter->GetLagCompensation()->ProjectileServerScoreRequest(
+                    HitCharacter,
+                    TraceStart,
+                    InitialVelocity,
+                    OwnerController->GetServerTime() - OwnerController->SingleTripTime);
+            }
         }
     }
 
@@ -49,6 +68,7 @@ void AProjectileBullet::BeginPlay()
 {
     Super::BeginPlay();
 
+    /*
     FPredictProjectilePathParams PathParams;
     PathParams.bTraceWithChannel = true;
     PathParams.bTraceWithCollision = true;
@@ -63,5 +83,5 @@ void AProjectileBullet::BeginPlay()
     PathParams.ActorsToIgnore.Add(this);
 
     FPredictProjectilePathResult PathResult;
-    UGameplayStatics::PredictProjectilePath(this, PathParams, PathResult);
+    UGameplayStatics::PredictProjectilePath(this, PathParams, PathResult); */
 }
