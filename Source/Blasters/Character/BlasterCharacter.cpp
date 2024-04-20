@@ -1111,3 +1111,10 @@ bool ABlasterCharacter::IsLocallyReloading()
 		return false;
 	return CombatComponent->bLocallyReloading;
 }
+
+bool ABlasterCharacter::IsHoldingTheFlag() const
+{
+	if (CombatComponent == nullptr)
+		return false;
+	return CombatComponent->bHoldingTheFlag;
+}

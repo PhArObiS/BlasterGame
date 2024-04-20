@@ -57,6 +57,9 @@ void UBlasterAnimInstance::NativeUpdateAnimation(float DeltaTime)
     // Check if the character is eliminated.
     bElimmed = BlasterCharacter->IsElimmed();
 
+    // Check if the character is holding the flag.
+    bHoldingTheFlag = BlasterCharacter->IsHoldingTheFlag();
+
     // Calculate Yaw offset for aim offset when strafing.
     FRotator AimRotation = BlasterCharacter->GetBaseAimRotation();
     FRotator MovementRotation = UKismetMathLibrary::MakeRotFromX(BlasterCharacter->GetVelocity());
