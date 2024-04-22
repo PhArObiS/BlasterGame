@@ -207,19 +207,19 @@ private:
 	class UAnimMontage *FireWeaponMontage;
 
 	UPROPERTY(EditAnywhere, Category = "Combat")
-	class UAnimMontage *ReloadMontage;
+	UAnimMontage *ReloadMontage;
 
 	UPROPERTY(EditAnywhere, Category = "Combat")
-	class UAnimMontage *HitReactMontage;
+	UAnimMontage *HitReactMontage;
 
 	UPROPERTY(EditAnywhere, Category = "Combat")
-	class UAnimMontage *ElimMontage;
+	UAnimMontage *ElimMontage;
 
 	UPROPERTY(EditAnywhere, Category = "Combat")
-	class UAnimMontage *ThrowGrenadeMontage;
+	UAnimMontage *ThrowGrenadeMontage;
 
 	UPROPERTY(EditAnywhere, Category = "Combat")
-	class UAnimMontage *SwapWeaponMontage;
+	UAnimMontage *SwapWeaponMontage;
 
 	void HideCameraIfCharacterClose();
 

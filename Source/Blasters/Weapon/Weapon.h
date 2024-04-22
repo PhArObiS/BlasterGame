@@ -39,7 +39,7 @@ public:
 	void SetHUDAmmo();
 	void ShowPickupWidget(bool bShowWidget);
 	virtual void Fire(const FVector &HitTarget);
-	void DroppedWeapon();
+	virtual void DroppedWeapon();
 	void AddAmmo(int32 AmmoToAdd);
 	FVector TraceEndWithScatter(const FVector &HitTarget);
 

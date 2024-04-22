@@ -16,6 +16,11 @@ class BLASTERS_API AFlag : public AWeapon
 
 public:
 	AFlag();
+	virtual void DroppedWeapon() override;
+
+protected:
+	void OnEquipped() override;
+	void OnDropped() override;
 
 private:
 	UPROPERTY(VisibleAnywhere)

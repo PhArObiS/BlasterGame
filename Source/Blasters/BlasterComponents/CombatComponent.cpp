@@ -39,6 +39,7 @@ void UCombatComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty> &Out
 	DOREPLIFETIME_CONDITION(UCombatComponent, CarriedAmmo, COND_OwnerOnly);
 	DOREPLIFETIME(UCombatComponent, CombatState);
 	DOREPLIFETIME(UCombatComponent, Grenades);
+	DOREPLIFETIME(UCombatComponent, bHoldingTheFlag);
 }
 
 void UCombatComponent::PickupAmmo(EWeaponType WeaponType, int32 AmmoAmount)
@@ -105,23 +106,28 @@ void UCombatComponent::FinishSwap()
 {
 	if (Character && Character->HasAuthority())
 	{
-		// Reset combat state to unoccupied after swapping weapons
 		CombatState = ECombatState::ECS_Unoccupied;
 	}
 	if (Character)
 		Character->bFinishedSwapping = true;
-
 	if (SecondaryWeapon)
 		SecondaryWeapon->EnableCustomDepth(true);
 }
 
 void UCombatComponent::FinishSwapAttachWeapons()
 {
+	// PlayEquipWeaponSound(SecondaryWeapon);
+
+	if (Character == nullptr || !Character->HasAuthority())
+		return;
+	AWeapon *TempWeapon = EquippedWeapon;
+	EquippedWeapon = SecondaryWeapon;
+	SecondaryWeapon = TempWeapon;
+
 	EquippedWeapon->SetWeaponState(EWeaponState::EWS_Equipped);
 	AttachActorToRightHand(EquippedWeapon);
 	EquippedWeapon->SetHUDAmmo();
 	UpdateCarriedAmmo();
-	PlayEquippedWeaponSound(EquippedWeapon);
 
 	SecondaryWeapon->SetWeaponState(EWeaponState::EWS_EquippedSecondary);
 	AttachActorToBackPack(SecondaryWeapon);
@@ -309,25 +315,34 @@ void UCombatComponent::ShotgunLocalFire(const TArray<FVector_NetQuantize> &Trace
 // Equip the specified weapon
 void UCombatComponent::EquipWeapon(AWeapon *WeaponToEquip)
 {
-	// Check if the character and the weapon are valid
 	if (Character == nullptr || WeaponToEquip == nullptr)
 		return;
-
 	if (CombatState != ECombatState::ECS_Unoccupied)
 		return;
 
-	if (EquippedWeapon != nullptr && SecondaryWeapon == nullptr)
+	if (WeaponToEquip->GetWeaponType() == EWeaponType::EWT_Flag)
 	{
-		EquipSecondaryWeapon(WeaponToEquip);
+		Character->Crouch();
+		bHoldingTheFlag = true;
+		WeaponToEquip->SetWeaponState(EWeaponState::EWS_Equipped);
+		AttachFlagToLeftHand(WeaponToEquip);
+		WeaponToEquip->SetOwner(Character);
+		TheFlag = WeaponToEquip;
 	}
 	else
 	{
-		EquipPrimaryWeapon(WeaponToEquip);
-	}
+		if (EquippedWeapon != nullptr && SecondaryWeapon == nullptr)
+		{
+			EquipSecondaryWeapon(WeaponToEquip);
+		}
+		else
+		{
+			EquipPrimaryWeapon(WeaponToEquip);
+		}
 
-	// Set character movement properties for weapon handling
-	Character->GetCharacterMovement()->bOrientRotationToMovement = false;
-	Character->bUseControllerRotationYaw = true;
+		Character->GetCharacterMovement()->bOrientRotationToMovement = false;
+		Character->bUseControllerRotationYaw = true;
+	}
 }
 
 void UCombatComponent::SwapWeapons()
@@ -415,6 +430,17 @@ void UCombatComponent::AttachActorToLeftHand(AActor *ActorToAttach)
 	if (HandSocket)
 	{
 		HandSocket->AttachActor(EquippedWeapon, Character->GetMesh());
+	}
+}
+
+void UCombatComponent::AttachFlagToLeftHand(AWeapon *Flag)
+{
+	if (Character == nullptr || Character->GetMesh() == nullptr || Flag == nullptr)
+		return;
+	const USkeletalMeshSocket *HandSocket = Character->GetMesh()->GetSocketByName(FName("FlagSocket"));
+	if (HandSocket)
+	{
+		HandSocket->AttachActor(Flag, Character->GetMesh());
 	}
 }
 
@@ -935,4 +961,12 @@ void UCombatComponent::InitializeCarriedAmmo()
 	CarriedAmmoMap.Emplace(EWeaponType::EWT_Shotgun, StartingShotgunAmmo);
 	CarriedAmmoMap.Emplace(EWeaponType::EWT_SniperRifle, StartingSniperAmmo);
 	CarriedAmmoMap.Emplace(EWeaponType::EWT_GrenadeLauncher, StartingGrenadeLauncherAmmo);
+}
+
+void UCombatComponent::OnRep_HoldingTheFlag()
+{
+	if (bHoldingTheFlag && Character && Character->IsLocallyControlled())
+	{
+		Character->Crouch();
+	}
 }
