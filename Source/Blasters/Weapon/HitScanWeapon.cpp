@@ -8,7 +8,6 @@
 #include "Sound/SoundCue.h"
 #include "WeaponTypes.h"
 #include "Blasters/BlasterComponents/LagCompensationComponent.h"
-#include "DrawDebugHelpers.h"
 
 // Fire function implementation
 void AHitScanWeapon::Fire(const FVector &HitTarget)

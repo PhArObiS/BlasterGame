@@ -66,7 +66,7 @@ protected:
 	float ClientServerDelta = 0.f; // The difference between the client's time and the server's time
 
 	UPROPERTY(EditAnywhere, Category = Time)
-	float TimeSyncFrequency = 5.f; // How often to sync the client's time with the server's time
+	float TimeSyncFrequency = 5.f;
 
 	float TimeSyncRunningTime = 0.f;
 	void CheckTimeSync(float DeltaTime);
@@ -92,7 +92,7 @@ protected:
 	UFUNCTION()
 	void OnRep_ShowTeamScores();
 
-	FString GetInfoText(const TArray<class ABlasterPlayerState *> Players);
+	FString GetInfoText(const TArray<class ABlasterPlayerState *> &Players);
 	FString GetTeamsInfoText(class ABlasterGameState *BlasterGameState);
 
 private:

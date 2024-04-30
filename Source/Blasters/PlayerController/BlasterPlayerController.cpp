@@ -148,14 +148,16 @@ void ABlasterPlayerController::Tick(float DeltaTime)
 
 void ABlasterPlayerController::CheckPing(float DeltaTime)
 {
+    if (HasAuthority())
+        return;
     HighPingRunningTime += DeltaTime;
     if (HighPingRunningTime > CheckPingFrequency)
     {
         PlayerState = PlayerState == nullptr ? GetPlayerState<ABlasterPlayerState>() : PlayerState;
         if (PlayerState)
         {
-            UE_LOG(LogTemp, Warning, TEXT("Ping: %d"), PlayerState->GetPingInMilliseconds());
-            if (PlayerState->GetPingInMilliseconds() * 4 > HighPingThreshold) // 4 times the ping is the threshold for high ping
+            // UE_LOG(LogTemp, Warning, TEXT("PlayerState->GetPing(): %d"), PlayerState->GetPingInMilliseconds()); -----------------------------
+            if (PlayerState->GetCompressedPing() * 4 > HighPingThreshold) // ping is compressd; its actuall value is 4 times the compressed value 
             {
                 HighPingWarning();
                 PingAnimationRunningTime = 0.f;
@@ -304,8 +306,9 @@ void ABlasterPlayerController::OnPossess(APawn *InPawn)
     {
         SetHUDHealth(BlasterCharacter->GetHealth(), BlasterCharacter->GetMaxHealth());
         SetHUDShield(BlasterCharacter->GetShield(), BlasterCharacter->GetMaxShield());
-        SetHUDGrenades(BlasterCharacter->GetCombatComponent()->GetGrenades());
+
         BlasterCharacter->UpdateHUDAmmo();
+        SetHUDGrenades(BlasterCharacter->GetCombatComponent()->GetGrenades());
     }
 }
 
@@ -687,7 +690,7 @@ void ABlasterPlayerController::HandleCooldown() // -----------------------------
     }
 }
 
-FString ABlasterPlayerController::GetInfoText(const TArray<class ABlasterPlayerState *> Players)
+FString ABlasterPlayerController::GetInfoText(const TArray<class ABlasterPlayerState *> &Players)
 {
     ABlasterPlayerState *BlasterPlayerState = GetPlayerState<ABlasterPlayerState>();
     if (BlasterPlayerState == nullptr)
@@ -722,7 +725,6 @@ FString ABlasterPlayerController::GetTeamsInfoText(ABlasterGameState *BlasterGam
 {
     if (BlasterGameState == nullptr)
         return FString();
-
     FString InfoTextString;
 
     const int32 RedTeamScore = BlasterGameState->RedTeamScore;
@@ -755,5 +757,5 @@ FString ABlasterPlayerController::GetTeamsInfoText(ABlasterGameState *BlasterGam
         InfoTextString.Append(FString::Printf(TEXT("%s: %d\n"), *Announcement::RedTeam, RedTeamScore));
     }
 
-    return FString();
+    return InfoTextString;
 }

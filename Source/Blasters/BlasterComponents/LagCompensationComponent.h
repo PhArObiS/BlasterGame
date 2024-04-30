@@ -21,6 +21,7 @@ struct FBoxInformation
 	FVector BoxExtent;
 };
 
+
 USTRUCT(BlueprintType)
 struct FFramePackage
 {
@@ -33,7 +34,7 @@ struct FFramePackage
 	TMap<FName, FBoxInformation> HitBoxInfo;
 
 	UPROPERTY()
-	ABlasterCharacter *Character;
+	ABlasterCharacter* Character;
 };
 
 USTRUCT(BlueprintType)

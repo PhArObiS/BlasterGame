@@ -11,6 +11,7 @@
 #include "Blasters/BlasterTypes/Team.h"
 #include "BlasterCharacter.generated.h"
 
+
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnLeftGame);
 
 UCLASS()
@@ -50,6 +51,7 @@ public:
 	void UpdateHUDHealth();
 	void UpdateHUDShield();
 	void UpdateHUDAmmo();
+	void UpdateHUDGrenades();
 
 	void SpawnDefaultWeapon();
 
@@ -382,7 +384,7 @@ public:
 	FORCEINLINE UBuffComponent *GetBuffComponent() const { return BuffComponent; }
 	bool IsLocallyReloading();
 	FORCEINLINE ULagCompensationComponent *GetLagCompensation() const { return LagCompensation; }
-	FORCEINLINE bool IsHoldingTheFlag() const;
+	bool IsHoldingTheFlag() const;
 	ETeam GetTeam();
 	void SetHoldingTheFlag(bool bHoldingTheFlag);
 };

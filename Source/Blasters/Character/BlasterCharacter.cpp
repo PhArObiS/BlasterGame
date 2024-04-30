@@ -425,7 +425,9 @@ void ABlasterCharacter::BeginPlay()
 	SpawnDefaultWeapon();
 	UpdateHUDAmmo();
 	UpdateHUDHealth();
+	// not called on server, called on client, so called too early for server
 	UpdateHUDShield();
+	UpdateHUDGrenades();
 
 	if (HasAuthority())
 	{
@@ -456,10 +458,8 @@ void ABlasterCharacter::RotateInPlace(float DeltaTime)
 		TurningInPlace = ETurningInPlace::ETIP_NotTurning;
 		return;
 	}
-	if (CombatComponent && CombatComponent->EquippedWeapon)
-		GetCharacterMovement()->bOrientRotationToMovement = false;
-	if (CombatComponent && CombatComponent->EquippedWeapon)
-		bUseControllerRotationYaw = true;
+	if (CombatComponent && CombatComponent->EquippedWeapon) GetCharacterMovement()->bOrientRotationToMovement = false;
+	if (CombatComponent && CombatComponent->EquippedWeapon) bUseControllerRotationYaw = true;
 	if (bDisableGameplay)
 	{
 		bUseControllerRotationYaw = false;
@@ -1038,6 +1038,15 @@ void ABlasterCharacter::UpdateHUDAmmo()
 	}
 }
 
+void ABlasterCharacter::UpdateHUDGrenades()
+{
+	BlasterPlayerController = BlasterPlayerController == nullptr ? Cast<ABlasterPlayerController>(Controller) : BlasterPlayerController;
+	if (BlasterPlayerController && CombatComponent)
+	{
+		BlasterPlayerController->SetHUDGrenades(CombatComponent->Grenades);
+	}
+}
+
 void ABlasterCharacter::SpawnDefaultWeapon()
 {
 	BlasterGameMode = BlasterGameMode == nullptr ? GetWorld()->GetAuthGameMode<ABlasterGameMode>() : BlasterGameMode;
@@ -1070,17 +1079,18 @@ void ABlasterCharacter::PollInit()
 			}
 		}
 	}
-	// if (BlasterPlayerController == nullptr)
-	// {
-	// 	BlasterPlayerController = BlasterPlayerController == nullptr ? Cast<ABlasterPlayerController>(Controller) : BlasterPlayerController;
-	// 	if (BlasterPlayerController)
-	// 	{
-	// 		SpawnDefaultWeapon();
-	// 		UpdateHUDAmmo();
-	// 		UpdateHUDHealth();
-	// 		UpdateHUDShield();
-	// 	}
-	// }
+	if (BlasterPlayerController == nullptr)
+	{
+		BlasterPlayerController = BlasterPlayerController == nullptr ? Cast<ABlasterPlayerController>(Controller) : BlasterPlayerController;
+		if (BlasterPlayerController)
+		{
+			SpawnDefaultWeapon();
+			UpdateHUDAmmo();
+			UpdateHUDHealth();
+			UpdateHUDShield();
+			UpdateHUDGrenades();
+		}
+	}
 }
 
 void ABlasterCharacter::UpdateDissolveMaterial(float DissolveValue)
@@ -1119,13 +1129,18 @@ void ABlasterCharacter::SetOverlappingWeapon(AWeapon *Weapon)
 	}
 }
 
-// Called on the client when a weapon is overlapped
+//can have an input parameter, but only of the type being replicated
+//what's passed in is the last value before replication
+//now we don't see the overlapwidget on the server
 void ABlasterCharacter::OnRep_OverlappingWeapon(AWeapon *LastWeapon)
 {
 	if (OverlappingWeapon)
 	{
 		OverlappingWeapon->ShowPickupWidget(true);
 	}
+	//the weapon we stopped overlapping with
+	//overlappingweapon will be a null pointer now, so this will still get called once
+	//when you stop overlapping
 	if (LastWeapon)
 	{
 		LastWeapon->ShowPickupWidget(false);
@@ -1174,8 +1189,7 @@ bool ABlasterCharacter::IsLocallyReloading()
 
 bool ABlasterCharacter::IsHoldingTheFlag() const
 {
-	if (CombatComponent == nullptr)
-		return false;
+	if (CombatComponent == nullptr) return false;
 	return CombatComponent->bHoldingTheFlag;
 }
 
