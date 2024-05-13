@@ -16,6 +16,7 @@ namespace MatchState
 ABlasterGameMode::ABlasterGameMode()
 {
     bDelayedStart = true; // Delayed start enabled
+    
 }
 
 // Called when the game mode begins play
@@ -129,14 +130,14 @@ void ABlasterGameMode::PlayerEliminated(ABlasterCharacter *ElimmedCharacter, ABl
     if (VictimPlayerState)
     {
         VictimPlayerState->AddToDefeats(1); // Increase victim's defeats
+        VictimPlayerState->AddElimText("YOU DEAD BITCH");
     }
 
-    // Eliminate the character
     if (ElimmedCharacter)
     {
-        ElimmedCharacter->Elim(false); // Eliminate the character
+        ElimmedCharacter->Elim(false);
     }
-
+    
     for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
     {
         ABlasterPlayerController *BlasterPlayer = Cast<ABlasterPlayerController>(*It);

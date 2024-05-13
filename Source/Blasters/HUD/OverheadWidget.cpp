@@ -3,6 +3,7 @@
 
 #include "OverheadWidget.h"
 #include "Components/TextBlock.h"
+#include "Blasters/PlayerState/BlasterPlayerState.h"
 #
 
 void UOverheadWidget::SetDisplayText(FString TextToDisplay)
@@ -34,6 +35,32 @@ void UOverheadWidget::ShowPlayerNetRole(APawn* InPawn)
     }
     FString RemoteRoleString = FString::Printf(TEXT("Remote Role: %s"), *Role);
     SetDisplayText(RemoteRoleString);
+}
+
+void UOverheadWidget::DisplayPlayerName(APawn* NewPlayer)
+{
+    if (NewPlayer)
+    {
+        APlayerState* PlayerState = NewPlayer->GetPlayerState();
+        if (PlayerState)
+        {
+            FString PlayerName = FString::Printf(TEXT("%s"), *PlayerState->GetPlayerName());
+            SetDisplayText(PlayerName);
+
+            //Clear the timer if player status obtained
+            GetWorld()->GetTimerManager().ClearTimer(PlayerNameTimerHandle);
+        }
+        else if (!PlayerNameTimerHandle.IsValid())
+        {
+            // Start the timer if it's not already running
+            GetWorld()->GetTimerManager().SetTimer(
+                PlayerNameTimerHandle,
+                [this, NewPlayer]()
+            {
+                DisplayPlayerName(NewPlayer);
+            }, 0.5f, true);
+        }
+    }
 }
 
 void UOverheadWidget::NativeDestruct()

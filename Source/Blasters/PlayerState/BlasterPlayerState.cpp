@@ -5,11 +5,13 @@
 #include "Blasters/PlayerController/BlasterPlayerController.h"
 #include "Net/UnrealNetwork.h"
 
+
 void ABlasterPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty> &OutLifetimeProps) const
 {
     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
     DOREPLIFETIME(ABlasterPlayerState, Defeats);
+    DOREPLIFETIME(ABlasterPlayerState, ElimMessage);
     DOREPLIFETIME(ABlasterPlayerState, Team);
 }
 
@@ -44,6 +46,7 @@ void ABlasterPlayerState::OnRep_Score()
 
 void ABlasterPlayerState::AddToDefeats(int32 DefeatsAmount)
 {
+    
     Defeats += DefeatsAmount;
     Character = Character == nullptr ? Cast<ABlasterCharacter>(GetPawn()) : Character;
     if (Character)
@@ -52,6 +55,22 @@ void ABlasterPlayerState::AddToDefeats(int32 DefeatsAmount)
         if (Controller)
         {
             Controller->SetHUDDefeats(Defeats);
+        }
+    }
+}
+
+void ABlasterPlayerState::AddElimText(FString ElimMessageText)
+{
+    // Set elimination message and update HUD
+    Character = Character == nullptr ? Cast<ABlasterCharacter>(GetPawn()) : Character;
+    if (Character)
+    {
+        Controller = Controller == nullptr ? Cast<ABlasterPlayerController>(Character->Controller) : Controller;
+        if (Controller)
+        {
+            // Use this pointer to access the member variable
+            this->ElimMessage = ElimMessageText;
+            Controller->SetHUDElimText(ElimMessage); // Update HUD locally
         }
     }
 }
@@ -85,6 +104,20 @@ void ABlasterPlayerState::OnRep_Defeats()
         if (Controller)
         {
             Controller->SetHUDDefeats(Defeats);
+        }
+    }
+}
+
+void ABlasterPlayerState::OnRep_ElimMessage()
+{
+    // Update HUD elimination message when replicated
+    Character = Character == nullptr ? Cast<ABlasterCharacter>(GetPawn()) : Character;
+    if (Character)
+    {
+        Controller = Controller == nullptr ? Cast<ABlasterPlayerController>(Character->Controller) : Controller;
+        if (Controller)
+        {
+            Controller->SetHUDElimText(ElimMessage);
         }
     }
 }

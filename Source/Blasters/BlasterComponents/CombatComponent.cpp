@@ -116,14 +116,14 @@ void UCombatComponent::FinishSwap()
 
 void UCombatComponent::FinishSwapAttachWeapons()
 {
-	// PlayEquipWeaponSound(SecondaryWeapon);
+	PlayEquippedWeaponSound(SecondaryWeapon);
 
 	if (Character == nullptr || !Character->HasAuthority())
 		return;
-	AWeapon *TempWeapon = EquippedWeapon;
-	EquippedWeapon = SecondaryWeapon;
-	SecondaryWeapon = TempWeapon;
-
+	// AWeapon *TempWeapon = EquippedWeapon;
+	// EquippedWeapon = SecondaryWeapon;
+	// SecondaryWeapon = TempWeapon;
+	// Swap(EquippedWeapon, SecondaryWeapon);
 	EquippedWeapon->SetWeaponState(EWeaponState::EWS_Equipped);
 	AttachActorToRightHand(EquippedWeapon);
 	EquippedWeapon->SetHUDAmmo();
@@ -337,43 +337,30 @@ void UCombatComponent::EquipWeapon(AWeapon *WeaponToEquip)
 {
 	if (Character == nullptr || WeaponToEquip == nullptr) return;
 	if (CombatState != ECombatState::ECS_Unoccupied) return;
-
-	if (WeaponToEquip->GetWeaponType() == EWeaponType::EWT_Flag)
+	if (EquippedWeapon != nullptr && SecondaryWeapon == nullptr)
 	{
-		Character->Crouch();
-		bHoldingTheFlag = true;
-		WeaponToEquip->SetWeaponState(EWeaponState::EWS_Equipped);
-		AttachFlagToLeftHand(WeaponToEquip);
-		WeaponToEquip->SetOwner(Character);
-		TheFlag = WeaponToEquip;
+		EquipSecondaryWeapon(WeaponToEquip);
 	}
 	else
 	{
-		if (EquippedWeapon != nullptr && SecondaryWeapon == nullptr)
-		{
-			EquipSecondaryWeapon(WeaponToEquip);
-		}
-		else
-		{
-			EquipPrimaryWeapon(WeaponToEquip);
-		}
-
-		Character->GetCharacterMovement()->bOrientRotationToMovement = false;
-		Character->bUseControllerRotationYaw = true;
+		EquipPrimaryWeapon(WeaponToEquip);
 	}
+	Character->GetCharacterMovement()->bOrientRotationToMovement = false;
+	Character->bUseControllerRotationYaw = true;
 }
 
 void UCombatComponent::SwapWeapons()
 {
-	if (CombatState != ECombatState::ECS_Unoccupied || Character == nullptr || !Character->HasAuthority())
-		return;
+	if (CombatState != ECombatState::ECS_Unoccupied || Character == nullptr || !Character->HasAuthority()) return;
 
+	Swap(EquippedWeapon, SecondaryWeapon);
+	Character->bFinishedSwapping = false;
 	Character->PlaySwapMontage();
 	CombatState = ECombatState::ECS_SwappingWeapons;
-	Character->bFinishedSwapping = false;
-	if (SecondaryWeapon)
-		SecondaryWeapon->EnableCustomDepth(false);
+	
+	if (SecondaryWeapon) SecondaryWeapon->EnableCustomDepth(false);
 }
+
 
 void UCombatComponent::EquipPrimaryWeapon(AWeapon *WeaponToEquip)
 {
@@ -631,14 +618,15 @@ void UCombatComponent::ServerLaunchGrenade_Implementation(const FVector_NetQuant
 		FActorSpawnParameters SpawnParams;
 		SpawnParams.Owner = Character;
 		SpawnParams.Instigator = Character;
-		UWorld *World = GetWorld();
+		UWorld* World = GetWorld();
 		if (World)
 		{
 			World->SpawnActor<AProjectile>(
 				GrenadeClass,
 				StartingLocation,
 				ToTarget.Rotation(),
-				SpawnParams);
+				SpawnParams
+				);
 		}
 	}
 }
@@ -648,8 +636,7 @@ void UCombatComponent::OnRep_CombatState()
 	switch (CombatState)
 	{
 	case ECombatState::ECS_Reloading:
-		if (Character && !Character->IsLocallyControlled())
-			HandleReload();
+		if (Character && !Character->IsLocallyControlled()) HandleReload();
 		break;
 	case ECombatState::ECS_Unoccupied:
 		if (bFireButtonPressed)
@@ -670,6 +657,7 @@ void UCombatComponent::OnRep_CombatState()
 		{
 			Character->PlaySwapMontage();
 		}
+		break;
 	}
 }
 

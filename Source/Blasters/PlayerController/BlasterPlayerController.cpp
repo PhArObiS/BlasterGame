@@ -157,7 +157,7 @@ void ABlasterPlayerController::CheckPing(float DeltaTime)
         if (PlayerState)
         {
             // UE_LOG(LogTemp, Warning, TEXT("PlayerState->GetPing(): %d"), PlayerState->GetPingInMilliseconds()); -----------------------------
-            if (PlayerState->GetCompressedPing() * 4 > HighPingThreshold) // ping is compressd; its actuall value is 4 times the compressed value 
+            if (PlayerState->GetCompressedPing() * 4 > HighPingThreshold) // ping is compressd; its actual value is 4 times the compressed value 
             {
                 HighPingWarning();
                 PingAnimationRunningTime = 0.f;
@@ -391,6 +391,17 @@ void ABlasterPlayerController::SetHUDDefeats(int32 Defeats)
     }
 }
 
+void ABlasterPlayerController::SetHUDElimText(FString ElimMessage)
+{
+    BlasterHUD = BlasterHUD == nullptr ? Cast<ABlasterHUD>(GetHUD()) : BlasterHUD;
+    bool bHUDValid = BlasterHUD && BlasterHUD->CharacterOverlay && BlasterHUD->CharacterOverlay->ElimText;
+
+    if (bHUDValid)
+    {
+        BlasterHUD->CharacterOverlay->ElimText->SetText(FText::FromString(ElimMessage));
+    }
+}
+
 void ABlasterPlayerController::SetHUDWeaponAmmo(int32 Ammo)
 {
     BlasterHUD = BlasterHUD == nullptr ? Cast<ABlasterHUD>(GetHUD()) : BlasterHUD;
@@ -554,6 +565,17 @@ void ABlasterPlayerController::PollInit()
                     if (bInitializeGrenades)
                         SetHUDGrenades(BlasterCharacter->GetCombatComponent()->GetGrenades());
                 }
+                /*we set this in onrep_showscores but character overlay was null for client at this point
+                 * so waiting until it's valid works here
+                 */
+                if (bShowTeamScores)
+                {
+                    InitTeamScores();
+                }
+                else
+                {
+                    HideTeamScores();
+                }
             }
         }
     }
@@ -629,7 +651,7 @@ void ABlasterPlayerController::OnRep_MatchState()
     }
 }
 
-void ABlasterPlayerController::HandleMatchHasStarted(bool bTeamsMatch) // -------------------------------------
+void ABlasterPlayerController::HandleMatchHasStarted(bool bTeamsMatch) 
 {
     if (HasAuthority())
         bShowTeamScores = bTeamsMatch;
@@ -644,7 +666,7 @@ void ABlasterPlayerController::HandleMatchHasStarted(bool bTeamsMatch) // ------
         }
         if (!HasAuthority())
             return;
-        if (bTeamsMatch)
+        if (bTeamsMatch && HasAuthority())
         {
             InitTeamScores();
         }

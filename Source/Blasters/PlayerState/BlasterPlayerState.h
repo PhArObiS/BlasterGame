@@ -16,31 +16,40 @@ class BLASTERS_API ABlasterPlayerState : public APlayerState
 	GENERATED_BODY()
 
 public:
+	// Override GetLifetimeReplicatedProps to specify replicated properties
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty> &OutLifetimeProps) const override;
 
-	/**
-	 * Replication notifies
-	 */
-	virtual void OnRep_Score() override;
-
-	UFUNCTION()
+	// Replication notifies
+	virtual void OnRep_Score() override; // Called when score is replicated
+	UFUNCTION() // Function to be called when defeats are replicated
 	virtual void OnRep_Defeats();
+	
+	UFUNCTION() // Function to be called when elimination message is replicated
+	virtual void OnRep_ElimMessage(); // *******************
+	
 
-	void AddToScore(float ScoreAmount);
-	void AddToDefeats(int32 DefeatsAmount);
-
+	// Functions to modify player state
+	void AddToScore(float ScoreAmount); // Add score
+	void AddToDefeats(int32 DefeatsAmount); // Add defeats
+	void AddElimText(FString ElimMessage); // Set elimination message
+	
 private:
 	UPROPERTY()
-	class ABlasterCharacter *Character;
+	class ABlasterCharacter* Character;
+	
 	UPROPERTY()
-	class ABlasterPlayerController *Controller;
+	class ABlasterPlayerController* Controller;
 
-	UPROPERTY(ReplicatedUsing = OnRep_Defeats)
+	UPROPERTY(ReplicatedUsing = OnRep_Defeats)// Replicated variable for keeping track of defeats
 	int32 Defeats;
+	
+	UPROPERTY(ReplicatedUsing = OnRep_ElimMessage) // Replicated variable for elimination message
+	FString ElimMessage;
 
-	UPROPERTY(ReplicatedUsing = OnRep_Team)
-	ETeam Team = ETeam::ET_NoTeam;
+	UPROPERTY(ReplicatedUsing = OnRep_Team) // Replicated variable for team
+	ETeam Team = ETeam::ET_NoTeam; // Default value is ET_NoTeam
 
+	// Function to be called when team is replicated
 	UFUNCTION()
 	void OnRep_Team();
 

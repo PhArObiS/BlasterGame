@@ -16,35 +16,49 @@ class BLASTERS_API ABlasterPlayerController : public APlayerController
 {
 	GENERATED_BODY()
 public:
+	// Functions to update various HUD elements
 	void SetHUDHealth(float Health, float MaxHealth);
 	void SetHUDShield(float Shield, float MaxShield);
 	void SetHUDScore(float Score);
 	void SetHUDDefeats(int32 Defeats);
+	void SetHUDElimText(FString ElimMessage);
+	
 	void SetHUDWeaponAmmo(int32 Ammo);
 	void SetHUDCarriedAmmo(int32 Ammo);
 	void SetHUDMatchCountdown(float CountdownTime);
 	void SetHUDAnnouncementCountdown(float CountdownTime);
 	void SetHUDGrenades(int32 Grenades);
+	
+	// Override functions from APlayerController
 	virtual void OnPossess(APawn *InPawn) override;
 	virtual void Tick(float DeltaTime) override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty> &OutLifetimeProps) const override;
+	
+	// Functions to manage HUD elements
 	void HideTeamScores();
 	void InitTeamScores();
 	void SetHUDRedTeamScore(int32 RedScore);
 	void SetHUDBlueTeamScore(int32 BlueScore);
 
-	virtual float GetServerTime();			// Synced with server time
-	virtual void ReceivedPlayer() override; // Sync with server clock as soon as possible
+	// Function to get the server time
+	virtual float GetServerTime();
+	
+	// Function to handle player reception
+	virtual void ReceivedPlayer() override;
+	
+	// Function to handle match state setting
 	void OnMatchStateSet(FName State, bool bTeamsMatch = false);
+	
+	// Function to handle match start
 	void HandleMatchHasStarted(bool bTeamsMatch = false);
+	
+	// Function to handle cooldown
 	void HandleCooldown();
 
 	float SingleTripTime = 0.f; // The time it takes for a message to travel from the client to the server and back
-
 	FHighPingDelegate HighPingDelegate;
 
 	void BroadcastElim(APlayerState *Attacker, APlayerState *Victim);
-
 protected:
 	virtual void BeginPlay() override;
 	void SetHUDTime();
@@ -118,7 +132,7 @@ private:
 
 	float MatchTime = 0.f;
 	float WarmupTime = 0.f;
-	float CooldownTime = 0.f;
+	float CooldownTime = 5.f;
 	uint32 CountdownInt = 0;
 
 	UPROPERTY(ReplicatedUsing = OnRep_MatchState)
@@ -162,4 +176,6 @@ private:
 
 	UPROPERTY(EditAnywhere)
 	float HighPingThreshold = 50.F;
+
+	
 };

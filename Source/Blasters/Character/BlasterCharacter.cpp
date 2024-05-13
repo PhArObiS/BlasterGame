@@ -752,6 +752,7 @@ void ABlasterCharacter::ServerEquipWeaponButtonPressed_Implementation()
 		}
 	}
 }
+
 void ABlasterCharacter::CrouchButtonPressed()
 {
 	if (CombatComponent && CombatComponent->bHoldingTheFlag)
@@ -1072,7 +1073,7 @@ void ABlasterCharacter::PollInit()
 			OnPlayerStateInitialized();
 
 			ABlasterGameState *BlasterGameState = Cast<ABlasterGameState>(UGameplayStatics::GetGameState(this));
-
+			BlasterPlayerState->AddElimText("");
 			if (BlasterGameState && BlasterGameState->TopScoringPlayers.Contains(BlasterPlayerState))
 			{
 				MulticastGainedTheLead();

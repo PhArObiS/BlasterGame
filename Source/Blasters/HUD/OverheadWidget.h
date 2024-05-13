@@ -23,7 +23,12 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void ShowPlayerNetRole(APawn* InPawn);
 
+	UFUNCTION(BlueprintCallable)
+	void DisplayPlayerName(APawn* NewPlayer);
+
 protected:
 	virtual void NativeDestruct() override;
+private:
+	FTimerHandle PlayerNameTimerHandle;
 	
 };
