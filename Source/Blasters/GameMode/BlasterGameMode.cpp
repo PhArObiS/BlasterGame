@@ -130,7 +130,7 @@ void ABlasterGameMode::PlayerEliminated(ABlasterCharacter *ElimmedCharacter, ABl
     if (VictimPlayerState)
     {
         VictimPlayerState->AddToDefeats(1); // Increase victim's defeats
-        VictimPlayerState->AddElimText("YOU DEAD BITCH");
+        VictimPlayerState->AddElimText("YOU DIED");
     }
 
     if (ElimmedCharacter)

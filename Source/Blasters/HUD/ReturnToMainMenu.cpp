@@ -11,7 +11,9 @@ void UReturnToMainMenu::MenuSetup()
 {
     AddToViewport();
     SetVisibility(ESlateVisibility::Visible);
-    bIsFocusable = true;
+    // Set bIsFocusable using the setter method
+    SetIsFocusable(true);
+
 
     UWorld *World = GetWorld();
     if (World)

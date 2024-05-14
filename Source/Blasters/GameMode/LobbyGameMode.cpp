@@ -31,7 +31,7 @@ void ALobbyGameMode::PostLogin(APlayerController *NewPlayer)
                 }
                 else if (MatchType == "TeamDeathmatch")
                 {
-                    World->ServerTravel(FString("/Game/Maps/TeamDeathmatch?listen"));
+                    World->ServerTravel(FString("/Game/Maps/TeamFactoryDeathmatch?listen"));
                 }
                 else if (MatchType == "CaptureTheFlag")
                 {
